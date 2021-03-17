@@ -39,7 +39,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item to='/child' active clickable v-ripple>
+            <q-item to='/child'  clickable v-ripple>
               <q-item-section avatar>
                 <q-icon name="escalator_warning" />
               </q-item-section>
