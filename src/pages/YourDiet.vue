@@ -1,12 +1,25 @@
 <template>
   <q-page class="q-pa-sm">  
     <div style="max-width: 800px; width: 100%;">
-        <span>다이어트 달력</span>
+        <!-- <span>다이어트 달력</span> -->
+        <q-toolbar class="text-primary row justify-between items-center">
+          <!-- <q-btn-group flat class="col-10"> -->
+            <q-btn color="primary" flat label="이전" @click="onPrev" />
+            <div class="col-4" style="text-align: center;">
+            {{ title }}
+            </div>
+            <q-btn color="primary" flat label="다음" @click="onNext" />
+          <!-- </q-btn-group> -->
+
+          
+        </q-toolbar>
         <q-calendar
         v-model="selectedDate"
+        ref="calendar"
         view="month"
         locale="en-us"
         :day-height="50"
+        @change="onChange"
         >
         <template #day="{ timestamp }">
             <template v-for="(event, index) in getEvents(timestamp.date)">
@@ -16,22 +29,21 @@
                 :class="badgeClasses(event, 'day')"
                 :style="badgeStyles(event, 'day')"
             >
-                <q-icon v-if="event.icon" :name="event.icon" class="q-mr-xs"></q-icon><span class="ellipsis">{{ event.title }}</span>
+                <q-icon v-if="event.icon" :name="event.icon" class="q-mr-xs"></q-icon><span class="ellipsis" @click=msg(event.details)>{{ event.title }}</span>
             </q-badge>
             </template>
         </template>
         </q-calendar>
     </div>
-    <span>체중</span>
-    <card-charts />
-    <span>담당 코멘트</span>
+    
+    <span>일정 내용</span>
     <q-card flat bordered class="my-card">
       <q-card-section>
         <div class="text-h6">경희명 한의원</div>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        주기적인 한약 복용 및 운동, 식이 요법이 중요합니다. 
+        {{comment}}
       </q-card-section>
 
       <!-- <q-separator inset />
@@ -40,7 +52,8 @@
         한달간 주기적인 체중 감소를 하였습니다. 대단합니다.
       </q-card-section> -->
     </q-card>
-
+    <span>체중</span>
+    <card-charts />
     <q-dialog v-model="prompt" persistent>
       <q-card style="min-width: 350px">
         <q-card-section>
@@ -143,27 +156,34 @@ export default {
   },
   data () {
     return {
-        prompt: false,
+      locale: 'ko-kr',
+      shortWeekdayLabel: false,
+      shortMonthLabel: false,
+      prompt: false,
+      dateFormatter: undefined,
+      start: undefined,
       bodyweight: '',
+      title: '',
+      comment: '따뜻한 마음으로 진료 합니다.',
       selectedDate: '',
       today: getCurrentDay(17),
       events: [
         {
-          title: '시작',
-          details: 'Everything is funny as long as it is happening to someone else',
+          title: '운동 시작',
+          details: '경희명 한의원에서 상담 받고 운동 시작',
           date: getCurrentDay(1),
           bgcolor: 'orange'
         },
         {
-          title: '약처방',
-          details: 'Buy a nice present',
+          title: '약처방(다이어트한약)',
+          details: '체질 개선 및 식욕 억제를 위한 한약 복욕 시작',
           date: getCurrentDay(4),
           bgcolor: 'green',
           icon: 'fas fa-birthday-cake'
         },
         {
-          title: '운동시작',
-          details: 'Time to pitch my idea to the company',
+          title: '운동 시작',
+          details: '근력 운동 및 요가',
           date: getCurrentDay(8),
           time: '10:00',
           duration: 120,
@@ -181,7 +201,7 @@ export default {
         },
         {
           title: '휴식',
-          details: 'Always a nice chat with mom',
+          details: '집에서 하루 종일 휴식....',
           date: getCurrentDay(20),
           time: '17:00',
           duration: 90,
@@ -189,8 +209,8 @@ export default {
           icon: 'fas fa-car'
         },
         {
-          title: 'Conference',
-          details: 'Teaching Javascript 101',
+          title: '상담',
+          details: '2번째 체질 개선 상황 상담',
           date: getCurrentDay(15),
           time: '08:00',
           duration: 540,
@@ -207,25 +227,83 @@ export default {
           icon: 'fas fa-utensils'
         },
         {
-          title: '체중',
-          details: 'Time for some weekend R&R',
+          title: '체중(67kg)',
+          details: '체중 2kg 감량',
+          date: getCurrentDay(10),
+          bgcolor: 'purple',
+          icon: 'rowing',
+          // days: 1
+        },
+        {
+          title: '체중(65kg)',
+          details: '체중 4kg 감량',
           date: getCurrentDay(16),
           bgcolor: 'purple',
           icon: 'rowing',
-          days: 1
+          // days: 1
         },
         {
-          title: '상담',
-          details: 'Trails and hikes, going camping! Don\'t forget to bring bear spray!',
+          title: '체중(60kg)',
+          details: '체중 6kg 감량',
+          date: getCurrentDay(19),
+          bgcolor: 'purple',
+          icon: 'rowing',
+          // days: 1
+        },
+        {
+          title: '상담(한의사)',
+          details: '피해야 할 음식과 먹어야 할 음식 확인',
           date: getCurrentDay(22),
           bgcolor: 'purple',
           icon: 'fas fa-plane',
-          days: 1
+          // days: 1
         }
       ]
     }
   },
+  watch: {
+    locale () {
+      this.updateFormatter()
+      this.updateTitle()
+    }
+  },
+  beforeMount () {
+    this.updateFormatter()
+  },
   methods: {
+    updateFormatter () {
+      try {
+        this.dateFormatter = new Intl.DateTimeFormat(this.locale || undefined, {
+          month: this.shortMonthLabel ? 'short' : 'long',
+          year: 'numeric',
+          timeZone: 'UTC'
+        })
+      }
+      catch (e) {
+        // console.error('Intl.DateTimeFormat not supported')
+        this.dateFormatter = undefined
+      }
+    },
+    updateTitle () {
+      const myDate = QCalendar.makeDate(this.start)
+      if (this.dateFormatter !== undefined) {
+        this.title = this.dateFormatter.format(myDate)
+      }
+    },
+    onChange ({ start }) {
+      this.start = start
+      this.updateTitle()
+    },
+    onPrev () {
+      this.$refs.calendar.prev()
+    },
+
+    onNext () {
+      this.$refs.calendar.next()
+    },
+    msg(message) {
+      this.comment= message
+    },
     isCssColor (color) {
       return !!color && !!color.match(/^(#|(rgb|hsl)a?\()/)
     },
