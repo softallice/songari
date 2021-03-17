@@ -5,9 +5,13 @@
       animated
       infinite
       v-model="slide"
+      :navigation-position="navPos"
       swipeable
       navigation
       height="200px"
+      
+      control-color="primary"
+      :autoplay="autoplay"
     >
       <q-carousel-slide name="first" img-src="https://images-kr.girlstyle.com/wp-content/uploads/2020/08/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA-2020-08-09-%E1%84%8B%E1%85%A9%E1%84%92%E1%85%AE-3.18.16.png">
         <div class="absolute-bottom custom-caption">
@@ -70,7 +74,9 @@ export default {
   
   data () {
     return {
-      slide: 'first'
+      slide: 'first',
+      navPos: 'top',
+      autoplay: true
     }
   }
 }
